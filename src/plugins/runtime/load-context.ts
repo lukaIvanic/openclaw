@@ -8,7 +8,6 @@ import {
   getCurrentPluginMetadataSnapshot,
   setCurrentPluginMetadataSnapshot,
 } from "../current-plugin-metadata-snapshot.js";
-import { discoverOpenClawPlugins } from "../discovery.js";
 import type { PluginLoadOptions } from "../loader.js";
 import type { PluginManifestRegistry } from "../manifest-registry.js";
 import { loadPluginMetadataSnapshot } from "../plugin-metadata-snapshot.js";
@@ -80,12 +79,10 @@ export function resolvePluginRuntimeLoadContext(
     config: rawConfig,
     activationSourceConfig: options?.activationSourceConfig,
   });
-  const autoEnableDiscovery = discoverOpenClawPlugins({ env });
   const autoEnabled = applyPluginAutoEnable({
     config: rawConfig,
     env,
     manifestRegistry,
-    discovery: autoEnableDiscovery,
   });
   const config = autoEnabled.config;
   const workspaceDir =

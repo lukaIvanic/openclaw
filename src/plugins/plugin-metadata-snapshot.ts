@@ -70,14 +70,7 @@ function findFastPathRegistryState(
 ): PersistedRegistryMemoState | undefined {
   for (const entry of pluginMetadataSnapshotMemo.values()) {
     const state = entry.registryState;
-    if (!state) {
-      continue;
-    }
-    if (
-      state.contextHash === contextHash &&
-      state.fastHash === fastHash &&
-      hashWatchedFiles(state.watchedFiles) === state.watchedFilesHash
-    ) {
+    if (state && state.contextHash === contextHash && state.fastHash === fastHash) {
       return state;
     }
   }
@@ -735,7 +728,12 @@ export function loadPluginMetadataSnapshot(
   });
   const memoKey = computePluginMetadataSnapshotMemoKey({ params, registryState });
   const cached = pluginMetadataSnapshotMemo.get(memoKey);
-  if (cached) {
+  const cachedState = cached?.registryState;
+  const cachedIsFresh =
+    cached !== undefined &&
+    (cachedState === undefined ||
+      hashWatchedFiles(cachedState.watchedFiles) === cachedState.watchedFilesHash);
+  if (cached && cachedIsFresh) {
     pluginMetadataSnapshotMemo.delete(memoKey);
     pluginMetadataSnapshotMemo.set(memoKey, cached);
     return measureDiagnosticsTimelineSpanSync(
@@ -753,6 +751,9 @@ export function loadPluginMetadataSnapshot(
       },
     );
   }
+  if (cached) {
+    pluginMetadataSnapshotMemo.delete(memoKey);
+  }
 
   const result = measureDiagnosticsTimelineSpanSync(
     "plugins.metadata.scan",
@@ -768,13 +769,41 @@ export function loadPluginMetadataSnapshot(
     },
   );
   if (canMemoizePluginMetadataSnapshotResult(result)) {
+    // Derived snapshots ride the persisted-state memoKey for hit symmetry, but
+    // their freshness needs to follow the derived plugin manifests too.
+    let entryRegistryState = registryState;
+    if (result.registrySource === "derived") {
+      const watchedFiles = collectWatchedFilesForDerivedIndex(
+        registryState.watchedFiles,
+        result.snapshot.index,
+      );
+      entryRegistryState = {
+        ...registryState,
+        watchedFiles,
+        watchedFilesHash: hashWatchedFiles(watchedFiles),
+      };
+    }
     storePluginMetadataSnapshotMemo({
       key: memoKey,
-      registryState,
+      registryState: entryRegistryState,
       snapshot: clonePluginMetadataSnapshot(result.snapshot),
     });
   }
   return result.snapshot;
+}
+
+function collectWatchedFilesForDerivedIndex(
+  baseWatchedFiles: readonly string[],
+  index: InstalledPluginIndex,
+): readonly string[] {
+  const files = new Set(baseWatchedFiles);
+  for (const plugin of index.plugins) {
+    if (plugin.manifestPath) files.add(plugin.manifestPath);
+    if (plugin.source) files.add(plugin.source);
+    if (plugin.setupSource) files.add(plugin.setupSource);
+    if (plugin.rootDir) files.add(path.join(plugin.rootDir, "package.json"));
+  }
+  return [...files].toSorted();
 }
 
 function canMemoizePluginMetadataSnapshotResult(result: {

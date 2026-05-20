@@ -301,6 +301,32 @@ describe("loadPluginMetadataSnapshot process memo", () => {
     expect(loadPluginRegistrySnapshotWithMetadata).toHaveBeenCalledTimes(2);
   });
 
+  it("refreshes derived snapshots when a derived-only plugin manifest changes", () => {
+    const stateDir = tempStateDir();
+    touchPersistedIndex(stateDir);
+    const pluginDir = path.join(stateDir, "current", "derived");
+    const manifestPath = path.join(pluginDir, "openclaw.plugin.json");
+    writeJson(manifestPath, { id: "derived", version: "1.0.0" });
+    loadPluginRegistrySnapshotWithMetadata.mockReturnValue({
+      source: "derived",
+      snapshot: makeIndex("derived", { manifestPath, rootDir: pluginDir }),
+      diagnostics: [
+        {
+          level: "warn",
+          code: "persisted-registry-stale-source",
+          message: "stale source",
+        },
+      ],
+    });
+    loadPluginManifestRegistryForInstalledIndex.mockReturnValue(makeManifestRegistry("derived"));
+
+    loadPluginMetadataSnapshot({ config: {}, env: {}, stateDir });
+    writeJson(manifestPath, { id: "derived", version: "2.0.0", commandAliases: [{ name: "new" }] });
+    loadPluginMetadataSnapshot({ config: {}, env: {}, stateDir });
+
+    expect(loadPluginRegistrySnapshotWithMetadata).toHaveBeenCalledTimes(2);
+  });
+
   it.each([
     ["persisted-registry-missing", undefined],
     ["persisted-registry-stale-source", undefined],
