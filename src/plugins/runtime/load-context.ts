@@ -83,6 +83,7 @@ export function resolvePluginRuntimeLoadContext(
     config: rawConfig,
     env,
     manifestRegistry,
+    discovery: metadataSnapshot?.discovery,
   });
   const config = autoEnabled.config;
   const workspaceDir =

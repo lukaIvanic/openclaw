@@ -4,6 +4,7 @@ import path from "node:path";
 import { resolveUserPath } from "../utils.js";
 import { resolveBundledPluginsDir } from "./bundled-dir.js";
 import { getCurrentPluginMetadataSnapshot } from "./current-plugin-metadata-snapshot.js";
+import type { PluginDiscoveryResult } from "./discovery.js";
 import { fileSignatureMatches } from "./installed-plugin-index-hash.js";
 import { hasOptionalMissingPluginManifestFile } from "./installed-plugin-index-manifest.js";
 import { loadInstalledPluginIndexInstallRecordsSync } from "./installed-plugin-index-record-reader.js";
@@ -19,7 +20,7 @@ import {
   extractPluginInstallRecordsFromInstalledPluginIndex,
   isInstalledPluginEnabled,
   listInstalledPluginRecords,
-  loadInstalledPluginIndex,
+  loadInstalledPluginIndexWithDiscovery,
   resolveInstalledPluginIndexPolicyHash,
   type InstalledPluginIndex,
   type InstalledPluginIndexRecord,
@@ -47,6 +48,7 @@ export type PluginRegistrySnapshotResult = {
   snapshot: PluginRegistrySnapshot;
   source: PluginRegistrySnapshotSource;
   diagnostics: readonly PluginRegistrySnapshotDiagnostic[];
+  discovery?: PluginDiscoveryResult;
 };
 
 export const DISABLE_PERSISTED_PLUGIN_REGISTRY_ENV = "OPENCLAW_DISABLE_PERSISTED_PLUGIN_REGISTRY";
@@ -370,15 +372,15 @@ export function loadPluginRegistrySnapshotWithMetadata(
     });
   }
 
+  const derived = loadInstalledPluginIndexWithDiscovery({
+    ...params,
+    ...(persistedInstallRecordReadsEnabled ? {} : { installRecords: params.installRecords ?? {} }),
+  });
   return {
-    snapshot: loadInstalledPluginIndex({
-      ...params,
-      ...(persistedInstallRecordReadsEnabled
-        ? {}
-        : { installRecords: params.installRecords ?? {} }),
-    }),
+    snapshot: derived.index,
     source: "derived",
     diagnostics,
+    discovery: derived.discovery,
   };
 }
 
