@@ -75,8 +75,10 @@ export function buildProvenanceIndex(params: {
   }
 
   const installRules = new Map<string, InstallTrackingRule>();
-  const installs =
-    params.installRecords ?? loadInstalledPluginIndexInstallRecordsSync({ env: params.env });
+  const installs = {
+    ...loadInstalledPluginIndexInstallRecordsSync({ env: params.env }),
+    ...params.installRecords,
+  };
   for (const [pluginId, install] of Object.entries(installs)) {
     const rule: InstallTrackingRule = {
       trackedWithoutPaths: false,
