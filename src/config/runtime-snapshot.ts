@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { clearLoadPluginMetadataSnapshotMemo } from "../plugins/plugin-metadata-snapshot.js";
 import type { OpenClawConfig } from "./types.js";
 
 export type RuntimeConfigSnapshotRefreshOptions = {
@@ -147,6 +148,7 @@ export function resetConfigRuntimeState(): void {
   runtimeConfigSourceSnapshot = null;
   runtimeConfigSnapshotMetadata = null;
   runtimeConfigSnapshotRevision = 0;
+  clearLoadPluginMetadataSnapshotMemo();
 }
 
 export function clearRuntimeConfigSnapshot(): void {
