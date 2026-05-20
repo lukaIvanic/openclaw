@@ -798,10 +798,18 @@ function collectWatchedFilesForDerivedIndex(
 ): readonly string[] {
   const files = new Set(baseWatchedFiles);
   for (const plugin of index.plugins) {
-    if (plugin.manifestPath) files.add(plugin.manifestPath);
-    if (plugin.source) files.add(plugin.source);
-    if (plugin.setupSource) files.add(plugin.setupSource);
-    if (plugin.rootDir) files.add(path.join(plugin.rootDir, "package.json"));
+    if (plugin.manifestPath) {
+      files.add(plugin.manifestPath);
+    }
+    if (plugin.source) {
+      files.add(plugin.source);
+    }
+    if (plugin.setupSource) {
+      files.add(plugin.setupSource);
+    }
+    if (plugin.rootDir) {
+      files.add(path.join(plugin.rootDir, "package.json"));
+    }
   }
   return [...files].toSorted();
 }
