@@ -374,7 +374,9 @@ export function loadPluginRegistrySnapshotWithMetadata(
 
   const derived = loadInstalledPluginIndexWithDiscovery({
     ...params,
-    ...(persistedInstallRecordReadsEnabled ? {} : { installRecords: params.installRecords ?? {} }),
+    installRecords: persistedInstallRecordReadsEnabled
+      ? params.installRecords
+      : (params.installRecords ?? {}),
   });
   return {
     snapshot: derived.index,
