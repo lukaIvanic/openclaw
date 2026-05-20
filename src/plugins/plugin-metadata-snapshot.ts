@@ -882,7 +882,7 @@ function loadPluginMetadataSnapshotImpl(params: LoadPluginMetadataSnapshotParams
       registryDiagnostics: registryResult.diagnostics,
       manifestRegistry,
       plugins: manifestRegistry.plugins,
-      diagnostics: manifestRegistry.diagnostics,
+      diagnostics: manifestRegistry.diagnostics ?? [],
       byPluginId,
       normalizePluginId,
       owners,
